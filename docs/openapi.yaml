@@ -1,0 +1,327 @@
+openapi: 3.0.3
+info:
+  title: MyPins API
+  version: 0.4.0
+  description: |
+    Lightweight API documentation scaffold for MyPins.
+    This file is intentionally minimal and should be expanded as routes stabilize.
+servers:
+  - url: http://localhost:3001
+    description: Local development
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    Pin:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        imageUrl:
+          type: string
+        createdBy:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+        publishAt:
+          type: string
+          nullable: true
+        deletedAt:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+paths:
+  /health:
+    get:
+      summary: Liveness check
+      responses:
+        '200':
+          description: Service is healthy
+  /ready:
+    get:
+      summary: Readiness check
+      responses:
+        '200':
+          description: Service is ready
+        '503':
+          description: One or more dependencies are missing
+  /api/pins:
+    get:
+      summary: List visible pins
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [trending, recent, popular]
+      responses:
+        '200':
+          description: Pin list
+    post:
+      summary: Create pin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, image]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                status:
+                  type: string
+                  enum: [draft, scheduled, published]
+                publishAt:
+                  type: string
+                tags:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Pin created
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+  /api/pins/bulk:
+    post:
+      summary: Run bulk pin action
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, pinIds]
+              properties:
+                action:
+                  type: string
+                  enum: [delete, restore, publish, add-tag, remove-tag]
+                pinIds:
+                  type: array
+                  items:
+                    type: integer
+                tag:
+                  type: string
+      responses:
+        '200':
+          description: Bulk action result
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+  /api/pins/{id}/comments:
+    get:
+      summary: List comments for a pin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Comment list
+    post:
+      summary: Create comment or reply
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                parentId:
+                  type: integer
+                  nullable: true
+      responses:
+        '201':
+          description: Comment created
+  /api/comments/{id}:
+    patch:
+      summary: Edit comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+      responses:
+        '200':
+          description: Comment updated
+    delete:
+      summary: Delete comment and nested replies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Comment deleted
+  /api/boards/{id}/export:
+    get:
+      summary: Export board metadata and saved pins
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Board export payload
+  /api/boards/import:
+    post:
+      summary: Import board payload into current account
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Board imported
+  /api/feature-flags:
+    patch:
+      summary: Update feature flags (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Feature flags updated
+        '403':
+          description: Admin privileges required
+  /api/me/permissions:
+    get:
+      summary: Get effective role and capabilities
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Role and capability flags
+  /api/admin/users:
+    get:
+      summary: List users with role metadata (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User list
+        '403':
+          description: Admin privileges required
+  /api/admin/users/{email}/role:
+    patch:
+      summary: Update user role (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: email
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [user, moderator, admin]
+      responses:
+        '200':
+          description: Role updated
+        '400':
+          description: Invalid request
+        '403':
+          description: Admin privileges required
+        '404':
+          description: User not found
+  /api/moderation/overview:
+    get:
+      summary: Moderation counters snapshot (moderator or admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Moderation overview
+        '403':
+          description: Moderator privileges required

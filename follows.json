@@ -1,0 +1,22 @@
+[
+  {
+    "followerEmail": "batch1+e73a5906@example.com",
+    "followingEmail": "traveler@mypins.com",
+    "createdAt": "2026-04-05T16:07:17.959Z"
+  },
+  {
+    "followerEmail": "batch1+057cd72e@example.com",
+    "followingEmail": "traveler@mypins.com",
+    "createdAt": "2026-04-05T16:09:42.840Z"
+  },
+  {
+    "followerEmail": "batch2+0bf95b43@example.com",
+    "followingEmail": "traveler@mypins.com",
+    "createdAt": "2026-04-05T16:14:32.741Z"
+  },
+  {
+    "followerEmail": "verify+10ee61d2@example.com",
+    "followingEmail": "traveler@mypins.com",
+    "createdAt": "2026-04-05T16:17:31.376Z"
+  }
+]

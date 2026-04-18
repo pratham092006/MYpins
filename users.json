@@ -1,0 +1,82 @@
+[
+    {
+        "email":  "testing@gmail.com",
+        "password":  "testing",
+        "displayName":  "Testing User",
+        "avatar":  "T",
+        "bio":  "Just exploring MyPins! Looking for design inspiration and food recipes.",
+        "createdAt":  "2024-01-01T00:00:00.000Z"
+    },
+    {
+        "email":  "admin@mypins.com",
+        "password":  "password123",
+        "displayName":  "MyPins Official",
+        "avatar":  "M",
+        "bio":  "Curating the best ideas for your next project.",
+        "createdAt":  "2023-01-01T00:00:00.000Z"
+    },
+    {
+        "email":  "chef@mypins.com",
+        "password":  "password123",
+        "displayName":  "Chef Gordon",
+        "avatar":  "C",
+        "bio":  "Professional chef sharing my favorite recipes from around the globe.",
+        "createdAt":  "2023-05-15T00:00:00.000Z"
+    },
+    {
+        "email":  "traveler@mypins.com",
+        "password":  "password123",
+        "displayName":  "Wanderlust",
+        "avatar":  "W",
+        "bio":  "Traveling the world one country at a time.",
+        "createdAt":  "2023-08-20T00:00:00.000Z"
+    },
+    {
+        "email":  "qa+8ab957da@example.com",
+        "passwordHash":  "fd36ecaf062780ef4be877742c41877d:a9e011c69d7ff08610209900441ba6e5be9c2f53e8a1d5fc9be93a5530b22648f2ce8f63c1a791ada4761ef504ddc13f5f7af7da42772d9f195d4f4c236d2f81",
+        "displayName":  "QA User",
+        "avatar":  "",
+        "bio":  "",
+        "createdAt":  "2026-04-05T15:17:13.143Z"
+    },
+    {
+        "email":  "batch1+e73a5906@example.com",
+        "passwordHash":  "5cea2a47b3334345fa34c999d9d6104b:f1b62f976c6fba73a626fc9fd4f9289e250190a72534eeea302ddea89342f80043e50b20b18e2e0da41d1a34f949166a66e387f19a086c5720dd3936e713ebc0",
+        "displayName":  "Batch One",
+        "avatar":  "",
+        "bio":  "",
+        "createdAt":  "2026-04-05T16:07:17.945Z"
+    },
+    {
+        "email":  "batch1+057cd72e@example.com",
+        "passwordHash":  "1ce3258091ec952467310e1d5c9d197b:fbb9f86e51ddf115c29e466f2c9dd03949f3020b61aec8c57c0da793cfa56fb2fc2b43f819dae4961d6e68233724cccc1da6e0a654fdebef0f7ee9dfed10b920",
+        "displayName":  "Batch One",
+        "avatar":  "",
+        "bio":  "",
+        "createdAt":  "2026-04-05T16:09:42.836Z"
+    },
+    {
+        "email":  "batch2+0bf95b43@example.com",
+        "passwordHash":  "5617e344b33e511d23f122bb27cd996a:1d59d43d09206b4aed0d165c32c1ef00600782438f4c01dce7fefa2a804939781ded5385ea8be32f0cb793a260f7a6d62586764e0062bec4dcd42554c9ece39b",
+        "displayName":  "Batch Two",
+        "avatar":  "",
+        "bio":  "",
+        "createdAt":  "2026-04-05T16:14:32.735Z"
+    },
+    {
+        "email":  "verify+10ee61d2@example.com",
+        "passwordHash":  "d9fdcb2149cfd2ca1686d635123c3621:2d7893fbbd874c3d0d1721b35738871c6a3abebfa46082cfdce47b0cf73283544635afd3d6c652d5bc803fca246b7c5023afa6f7cac6b0dc34ae7daa35e0058a",
+        "displayName":  "Verify User",
+        "avatar":  "",
+        "bio":  "",
+        "createdAt":  "2026-04-05T16:17:31.372Z"
+    },
+    {
+        "email":  "verify+9b396c0c@example.com",
+        "passwordHash":  "fa1b74643f23d6f9a45af00c1a7b3e44:e172e5b654b901d5772c3b92c96a54984c22a14c1c9985d7e150c630a5dd294a1cffbe755730a4ee59f253f53c305b005592221b25f537006bdee9765e74bae3",
+        "displayName":  "Verify Upload",
+        "avatar":  "",
+        "bio":  "",
+        "createdAt":  "2026-04-05T16:19:47.270Z"
+    }
+]
