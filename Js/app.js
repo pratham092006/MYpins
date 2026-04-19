@@ -97,6 +97,7 @@ const elements = {
 
 let uploadedImage = null;
 let heroInterval = null;
+let hasShownApiFallbackNotice = false;
 
 window.addEventListener('DOMContentLoaded', init);
 window.addEventListener('beforeunload', persistSession);
@@ -202,22 +203,53 @@ async function apiRequest(url, options = {}) {
   }
 
   const response = await fetch(url, finalOptions);
+  const contentType = response.headers.get('content-type') || '';
   const rawText = await response.text();
   let payload = {};
 
   if (rawText) {
-    try {
-      payload = JSON.parse(rawText);
-    } catch {
+    if (contentType.includes('application/json')) {
+      try {
+        payload = JSON.parse(rawText);
+      } catch {
+        payload = {};
+      }
+    } else {
       payload = { message: rawText };
     }
   }
 
   if (!response.ok) {
+    const raw = String(rawText || '').trim();
+    const likelyHtml = /^<!doctype html|^<html/i.test(raw);
+
+    if (likelyHtml) {
+      if (response.status === 404) {
+        throw new Error('API endpoint not found. Start the backend with npm run dev.');
+      }
+      throw new Error('API unavailable. Please make sure the backend server is running.');
+    }
+
     throw new Error(payload.error || payload.message || `Request failed (${response.status})`);
   }
 
   return payload;
+}
+
+async function loadPinsFromStaticFallback() {
+  try {
+    const response = await fetch('./pins.json', { cache: 'no-store' });
+    if (!response.ok) return false;
+
+    const pins = await response.json();
+    if (!Array.isArray(pins)) return false;
+
+    state.pins = pins;
+    applyFilters();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function loadPins() {
@@ -226,6 +258,15 @@ async function loadPins() {
     state.pins = Array.isArray(pins) ? pins : [];
     applyFilters();
   } catch (error) {
+    const loadedFromFallback = await loadPinsFromStaticFallback();
+    if (loadedFromFallback) {
+      if (!hasShownApiFallbackNotice) {
+        showToast('API unavailable, showing local pins data.');
+        hasShownApiFallbackNotice = true;
+      }
+      return;
+    }
+
     showToast(error.message, 'error');
     state.pins = [];
     applyFilters();
