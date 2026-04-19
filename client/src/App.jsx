@@ -28,9 +28,13 @@ function getApiBaseCandidates() {
   const envBase = normalizeApiBase(RAW_API_BASE);
   const host = typeof window !== 'undefined' ? String(window.location.hostname || '').toLowerCase() : '';
   const isNetlifyHost = host.endsWith('.netlify.app') || host === 'mypins.netlify.app';
-  const preferred = isNetlifyHost ? ['', REMOTE_API_BASE] : [REMOTE_API_BASE, ''];
 
-  return uniqueApiBases([envBase, ...preferred]);
+  // On Netlify, force same-origin API usage so requests flow through redirects.
+  if (isNetlifyHost) {
+    return uniqueApiBases([envBase, '']);
+  }
+
+  return uniqueApiBases([envBase, REMOTE_API_BASE, '']);
 }
 
 const API_BASE_CANDIDATES = getApiBaseCandidates();
