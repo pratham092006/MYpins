@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "ui:dev": "vite --config client/vite.config.js",
-    "ui:build": "vite build --config client/vite.config.js",
-    "ui:preview": "vite preview --config client/vite.config.js",
+    "ui:dev": "node ./node_modules/vite/bin/vite.js --config client/vite.config.js",
+    "ui:build": "node ./node_modules/vite/bin/vite.js build --config client/vite.config.js",
+    "ui:preview": "node ./node_modules/vite/bin/vite.js preview --config client/vite.config.js",
     "test": "node -e \"console.log('No automated tests configured')\""
   },
   "keywords": [],
