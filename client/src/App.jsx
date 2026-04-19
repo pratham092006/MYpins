@@ -43,6 +43,13 @@ function apiUrl(path) {
   return API_BASE ? `${API_BASE}${normalizedPath}` : normalizedPath;
 }
 
+function resolveMediaUrl(value) {
+  const url = String(value || '').trim();
+  if (!url) return '';
+  if (/^(data:|blob:)/i.test(url)) return url;
+  return apiUrl(url);
+}
+
 export default function App() {
   const [activePage, setActivePage] = useState('home');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -690,7 +697,7 @@ export default function App() {
       <article className="pin" key={pin.id} onClick={() => openPinDetail(pin.id)}>
         <div className="pin-img-wrapper">
           <img
-            src={pin.imageUrl}
+            src={resolveMediaUrl(pin.imageUrl)}
             alt={pin.title}
             className="pin-image"
             loading="lazy"
@@ -849,7 +856,7 @@ export default function App() {
             <section className="profile-section">
               <div className="profile-avatar">
                 {profileUser?.avatar
-                  ? <img src={profileUser.avatar} alt={profileUser.displayName || profileUser.email || 'Profile'} />
+                  ? <img src={resolveMediaUrl(profileUser.avatar)} alt={profileUser.displayName || profileUser.email || 'Profile'} />
                   : (profileUser?.displayName || profileUser?.email || currentUser?.displayName || 'U')[0].toUpperCase()}
               </div>
               <div className="profile-name">
@@ -1013,13 +1020,13 @@ export default function App() {
                   <article className="board-card" key={board.id}>
                     <div className="board-cover">
                       <div className="board-cover-main">
-                        {board.pins?.[0]?.imageUrl && <img src={board.pins[0].imageUrl} alt={board.name} />}
+                        {board.pins?.[0]?.imageUrl && <img src={resolveMediaUrl(board.pins[0].imageUrl)} alt={board.name} />}
                       </div>
                       <div className="board-cover-small">
-                        {board.pins?.[1]?.imageUrl && <img src={board.pins[1].imageUrl} alt={board.name} />}
+                        {board.pins?.[1]?.imageUrl && <img src={resolveMediaUrl(board.pins[1].imageUrl)} alt={board.name} />}
                       </div>
                       <div className="board-cover-small">
-                        {board.pins?.[2]?.imageUrl && <img src={board.pins[2].imageUrl} alt={board.name} />}
+                        {board.pins?.[2]?.imageUrl && <img src={resolveMediaUrl(board.pins[2].imageUrl)} alt={board.name} />}
                       </div>
                     </div>
                     <div className="board-info">
@@ -1077,7 +1084,7 @@ export default function App() {
               {detailLoading && <div className="section-title">Loading...</div>}
               {!detailLoading && detailPin && (
                 <img
-                  src={detailPin.imageUrl}
+                  src={resolveMediaUrl(detailPin.imageUrl)}
                   alt={detailPin.title}
                   onError={event => {
                     event.currentTarget.src = fallbackImage(detailPin.title);

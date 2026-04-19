@@ -257,7 +257,11 @@ function writeBoards(boards) {
 }
 
 function readComments() {
-  return readJSON(COMMENTS_FILE, []);
+  const raw = readJSON(COMMENTS_FILE, []);
+  if (Array.isArray(raw)) return raw;
+  if (raw && Array.isArray(raw.comments)) return raw.comments;
+  if (raw && typeof raw === 'object' && (raw.id || raw.pinId)) return [raw];
+  return [];
 }
 
 function writeComments(comments) {
