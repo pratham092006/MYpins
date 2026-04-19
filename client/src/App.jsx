@@ -1,8 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const SESSION_KEY = 'mypins.react.user';
-const RAW_API_BASE = String(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://mypins.onrender.com').trim();
-const API_BASE = RAW_API_BASE.replace(/\/$/, '');
+const RAW_API_BASE = String(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '').trim();
+const REMOTE_API_BASE = 'https://mypins.onrender.com';
+
+function normalizeApiBase(value) {
+  return String(value || '').trim().replace(/\/$/, '');
+}
+
+function uniqueApiBases(list) {
+  return Array.from(new Set(list.map(normalizeApiBase).filter(Boolean)));
+}
+
+function getApiBaseCandidates() {
+  const envBase = normalizeApiBase(RAW_API_BASE);
+  const host = typeof window !== 'undefined' ? String(window.location.hostname || '').toLowerCase() : '';
+  const isNetlifyHost = host.endsWith('.netlify.app') || host === 'mypins.netlify.app';
+  const preferred = isNetlifyHost ? ['', REMOTE_API_BASE] : [REMOTE_API_BASE, ''];
+
+  return uniqueApiBases([envBase, ...preferred]);
+}
+
+const API_BASE_CANDIDATES = getApiBaseCandidates();
 
 const CATEGORY_OPTIONS = [
   { id: 'all', label: 'All Pins' },
@@ -94,10 +113,11 @@ function getCategoryFallbackImage(category) {
   return CATEGORY_FALLBACKS[key] || CATEGORY_FALLBACKS.other;
 }
 
-function apiUrl(path) {
+function apiUrl(path, base = API_BASE_CANDIDATES[0] || '') {
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return API_BASE ? `${API_BASE}${normalizedPath}` : normalizedPath;
+  const normalizedBase = normalizeApiBase(base);
+  return normalizedBase ? `${normalizedBase}${normalizedPath}` : normalizedPath;
 }
 
 function resolveMediaUrl(value) {
@@ -281,31 +301,56 @@ export default function App() {
 
   async function requestJSON(url, options = {}, defaultError = 'Request failed') {
     const method = String(options.method || 'GET').toUpperCase();
-    const maxAttempts = method === 'GET' ? 2 : 1;
+    const perTargetAttempts = method === 'GET' ? 2 : 1;
+    const targets = /^https?:\/\//i.test(url)
+      ? [url]
+      : [
+          ...new Set([
+            ...API_BASE_CANDIDATES.map(base => apiUrl(url, base)),
+            apiUrl(url, '')
+          ])
+        ];
 
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      try {
-        const response = await fetch(apiUrl(url), { ...options, signal: controller.signal });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(payload.error || defaultError);
+    let lastError = null;
+
+    for (const target of targets) {
+      for (let attempt = 0; attempt < perTargetAttempts; attempt += 1) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        try {
+          const response = await fetch(target, { ...options, signal: controller.signal });
+          const payload = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            const statusError = new Error(payload.error || defaultError);
+            statusError.status = response.status;
+            throw statusError;
+          }
+
+          return payload;
+        } catch (error) {
+          lastError = error;
+
+          const isLastAttempt = attempt === perTargetAttempts - 1;
+          if (!isLastAttempt) {
+            continue;
+          }
+
+          const status = Number(error?.status || 0);
+          const shouldNotFallback = status >= 400 && status < 500 && ![404, 408, 429].includes(status);
+          if (shouldNotFallback) {
+            throw new Error(error?.message || defaultError);
+          }
+        } finally {
+          clearTimeout(timeoutId);
         }
-        return payload;
-      } catch (error) {
-        const isLastAttempt = attempt === maxAttempts - 1;
-        if (isLastAttempt) {
-          throw new Error(error?.message || defaultError);
-        }
-      } finally {
-        clearTimeout(timeoutId);
+
+        await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
       }
-
-      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
     }
 
-    throw new Error(defaultError);
+    throw new Error(lastError?.message || defaultError);
   }
 
   function updateAuthField(event) {
