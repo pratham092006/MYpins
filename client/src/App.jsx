@@ -184,7 +184,18 @@ export default function App() {
   const [profileSavedPins, setProfileSavedPins] = useState([]);
   const [profileBoards, setProfileBoards] = useState([]);
   const [showBoardForm, setShowBoardForm] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploadingPin, setUploadingPin] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    description: '',
+    category: 'other',
+    tags: '',
+    status: 'published',
+    publishAt: '',
+    image: null
+  });
   const [profileForm, setProfileForm] = useState({ displayName: '', bio: '', avatar: '' });
   const [boardForm, setBoardForm] = useState({ name: '', description: '', visibility: 'private' });
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -430,8 +441,19 @@ export default function App() {
     setProfileCreatedPins([]);
     setProfileSavedPins([]);
     setProfileBoards([]);
+    setShowUploadForm(false);
+    setUploadingPin(false);
     setShowProfileForm(false);
     setShowBoardForm(false);
+    setUploadForm({
+      title: '',
+      description: '',
+      category: 'other',
+      tags: '',
+      status: 'published',
+      publishAt: '',
+      image: null
+    });
     setProfileForm({ displayName: '', bio: '', avatar: '' });
     setBoardForm({ name: '', description: '', visibility: 'private' });
     setActivePage('home');
@@ -544,6 +566,84 @@ export default function App() {
       await loadProfileContent();
     } catch (error) {
       showToast(error.message || 'Failed to create board', 'error');
+    }
+  }
+
+  function updateUploadField(event) {
+    const { name, value } = event.target;
+    setUploadForm(prev => ({ ...prev, [name]: value }));
+  }
+
+  function updateUploadImage(event) {
+    const file = event.target.files?.[0] || null;
+    setUploadForm(prev => ({ ...prev, image: file }));
+  }
+
+  function resetUploadForm() {
+    setUploadForm({
+      title: '',
+      description: '',
+      category: 'other',
+      tags: '',
+      status: 'published',
+      publishAt: '',
+      image: null
+    });
+  }
+
+  async function submitUploadPin(event) {
+    event.preventDefault();
+    if (!token) {
+      openAuthModal('login');
+      return;
+    }
+
+    if (!uploadForm.title.trim()) {
+      showToast('Pin title is required', 'error');
+      return;
+    }
+
+    if (!uploadForm.image) {
+      showToast('Please choose an image to upload', 'error');
+      return;
+    }
+
+    if (uploadForm.status === 'scheduled' && !uploadForm.publishAt) {
+      showToast('Pick a publish date for scheduled pins', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', uploadForm.title.trim());
+    formData.append('description', uploadForm.description.trim());
+    formData.append('category', uploadForm.category);
+    formData.append('tags', uploadForm.tags);
+    formData.append('status', uploadForm.status);
+    if (uploadForm.status === 'scheduled' && uploadForm.publishAt) {
+      formData.append('publishAt', uploadForm.publishAt);
+    }
+    formData.append('image', uploadForm.image);
+
+    setUploadingPin(true);
+    try {
+      const pin = await requestJSON('/api/pins', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      }, 'Failed to upload pin');
+
+      setPins(prev => [pin, ...prev]);
+      setShowUploadForm(false);
+      resetUploadForm();
+      showToast('Pin uploaded successfully', 'success');
+      setPinsRetryKey(prev => prev + 1);
+      if (isProfilePage) {
+        await loadProfileContent();
+      }
+    } catch (error) {
+      showToast(error.message || 'Failed to upload pin', 'error');
+    } finally {
+      setUploadingPin(false);
     }
   }
 
@@ -973,6 +1073,16 @@ export default function App() {
 
           {currentUser && (
             <div className="logged-in-actions">
+              <button
+                className="btn login-btn"
+                type="button"
+                onClick={() => {
+                  navigateToPage('profile');
+                  setShowUploadForm(true);
+                }}
+              >
+                Upload
+              </button>
               <button className="icon-btn" type="button" title="Profile" onClick={() => navigateToPage('profile')}>
                 <i className="fas fa-user" />
               </button>
@@ -1065,8 +1175,102 @@ export default function App() {
                 <button className="profile-edit-btn" type="button" onClick={() => setShowBoardForm(prev => !prev)}>
                   {showBoardForm ? 'Cancel board' : 'Create board'}
                 </button>
+                <button className="profile-edit-btn" type="button" onClick={() => setShowUploadForm(prev => !prev)}>
+                  {showUploadForm ? 'Cancel upload' : 'Upload pin'}
+                </button>
               </div>
             </section>
+
+            {showUploadForm && (
+              <form onSubmit={submitUploadPin} className="modal-body" style={{ maxWidth: '620px', margin: '0 auto 16px' }}>
+                <div className="form-group">
+                  <label htmlFor="upload-title">Title</label>
+                  <input
+                    id="upload-title"
+                    name="title"
+                    type="text"
+                    required
+                    value={uploadForm.title}
+                    onChange={updateUploadField}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="upload-description">Description</label>
+                  <input
+                    id="upload-description"
+                    name="description"
+                    type="text"
+                    value={uploadForm.description}
+                    onChange={updateUploadField}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="upload-category">Category</label>
+                  <select
+                    id="upload-category"
+                    name="category"
+                    value={uploadForm.category}
+                    onChange={updateUploadField}
+                  >
+                    <option value="travel">Travel</option>
+                    <option value="food">Food</option>
+                    <option value="design">Design</option>
+                    <option value="art">Art</option>
+                    <option value="photography">Photography</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="upload-tags">Tags (comma separated)</label>
+                  <input
+                    id="upload-tags"
+                    name="tags"
+                    type="text"
+                    value={uploadForm.tags}
+                    onChange={updateUploadField}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="upload-status">Status</label>
+                  <select
+                    id="upload-status"
+                    name="status"
+                    value={uploadForm.status}
+                    onChange={updateUploadField}
+                  >
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                    <option value="scheduled">Scheduled</option>
+                  </select>
+                </div>
+                {uploadForm.status === 'scheduled' && (
+                  <div className="form-group">
+                    <label htmlFor="upload-publish-at">Publish at</label>
+                    <input
+                      id="upload-publish-at"
+                      name="publishAt"
+                      type="datetime-local"
+                      value={uploadForm.publishAt}
+                      onChange={updateUploadField}
+                    />
+                  </div>
+                )}
+                <div className="form-group">
+                  <label htmlFor="upload-image">Image</label>
+                  <input
+                    id="upload-image"
+                    name="image"
+                    type="file"
+                    accept="image/*"
+                    required
+                    onChange={updateUploadImage}
+                  />
+                </div>
+                <button type="submit" className="submit-btn" disabled={uploadingPin}>
+                  {uploadingPin ? 'Uploading...' : 'Upload pin'}
+                </button>
+              </form>
+            )}
 
             {showProfileForm && (
               <form onSubmit={saveProfile} className="modal-body" style={{ maxWidth: '620px', margin: '0 auto 16px' }}>
