@@ -40,3 +40,26 @@ After building, `npm start` serves:
 - Built React app from `client/dist`
 
 If `client/dist` is not present, backend falls back to legacy `index.html`.
+
+## Deploy Frontend On Netlify (React)
+
+This repo now includes `netlify.toml` so Netlify publishes the React app from `client/dist`.
+
+Required Netlify settings:
+
+1. Build command: `npm run ui:build`
+2. Publish directory: `client/dist`
+
+## Deploy Backend Separately
+
+Netlify (static hosting) does not run your Express API by default. Deploy the backend (`app.js`) to a Node host such as Render, Railway, Fly.io, or any VPS.
+
+Set this environment variable in Netlify:
+
+`VITE_API_BASE_URL=https://your-backend-domain.com`
+
+After setting it, trigger a new Netlify deploy so React calls:
+
+- `https://your-backend-domain.com/api/...`
+
+instead of trying to call `/api/...` on the Netlify domain.

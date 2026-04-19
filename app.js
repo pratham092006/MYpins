@@ -33,18 +33,39 @@ const SAVES_FILE = path.join(__dirname, 'saves.json');
 const FOLLOWS_FILE = path.join(__dirname, 'follows.json');
 const FEATURE_FLAGS_FILE = path.join(__dirname, 'feature-flags.json');
 const ROOT_STATIC_DIR = path.join(__dirname, '.');
-const CLIENT_DIST_DIR = path.join(__dirname, 'client', 'dist');
-const CLIENT_DIST_INDEX = path.join(CLIENT_DIST_DIR, 'index.html');
+const CLIENT_DIST_CANDIDATES = [
+  path.join(__dirname, 'client', 'dist'),
+  path.join(__dirname, 'dist')
+];
+
+function resolveClientDistDir() {
+  for (const candidate of CLIENT_DIST_CANDIDATES) {
+    if (fs.existsSync(path.join(candidate, 'index.html'))) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+const CLIENT_DIST_DIR = resolveClientDistDir();
+const CLIENT_DIST_INDEX = CLIENT_DIST_DIR ? path.join(CLIENT_DIST_DIR, 'index.html') : null;
 
 const rateBuckets = new Map();
 
 if (!fs.existsSync(IMG_DIR)) fs.mkdirSync(IMG_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+app.get('/index.html', (_req, res, next) => {
+  if (CLIENT_DIST_INDEX && fs.existsSync(CLIENT_DIST_INDEX)) {
+    return res.sendFile(CLIENT_DIST_INDEX);
+  }
+  return next();
+});
+
 app.use('/IMG', express.static(IMG_DIR, { maxAge: '7d', immutable: true }));
 app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '1d' }));
 app.use(express.static(ROOT_STATIC_DIR, { index: false }));
-if (fs.existsSync(CLIENT_DIST_DIR)) {
+if (CLIENT_DIST_DIR) {
   app.use(express.static(CLIENT_DIST_DIR, { index: false }));
 }
 
@@ -399,7 +420,7 @@ function searchPins(query, category) {
 }
 
 app.get('/', (_req, res) => {
-  if (fs.existsSync(CLIENT_DIST_INDEX)) {
+  if (CLIENT_DIST_INDEX && fs.existsSync(CLIENT_DIST_INDEX)) {
     return res.sendFile(CLIENT_DIST_INDEX);
   }
   return res.sendFile(path.join(__dirname, 'index.html'));
@@ -1185,7 +1206,7 @@ app.patch('/api/feature-flags', requireAuth, requireAdmin, writeRateLimiter, (re
 });
 
 app.get(/^(?!\/api\/|\/uploads\/|\/IMG\/|\/Style\/|\/Js\/).*/, (_req, res) => {
-  if (fs.existsSync(CLIENT_DIST_INDEX)) {
+  if (CLIENT_DIST_INDEX && fs.existsSync(CLIENT_DIST_INDEX)) {
     return res.sendFile(CLIENT_DIST_INDEX);
   }
 

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const SESSION_KEY = 'mypins.react.user';
+const RAW_API_BASE = String(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '').trim();
+const API_BASE = RAW_API_BASE.replace(/\/$/, '');
 
 const CATEGORY_OPTIONS = [
   { id: 'all', label: 'All Pins' },
@@ -33,6 +35,12 @@ function saveSession(session) {
 function fallbackImage(title) {
   const safe = encodeURIComponent(title || 'Pin');
   return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 420'><rect width='320' height='420' fill='%23f3ece5'/><text x='160' y='210' text-anchor='middle' fill='%2363584f' font-size='18'>${safe}</text></svg>`;
+}
+
+function apiUrl(path) {
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return API_BASE ? `${API_BASE}${normalizedPath}` : normalizedPath;
 }
 
 export default function App() {
@@ -89,14 +97,9 @@ export default function App() {
         if (activeCategory !== 'all') params.set('category', activeCategory);
 
         const endpoint = params.toString() ? `/api/pins?${params.toString()}` : '/api/pins';
-        const response = await fetch(endpoint, {
+        const payload = await requestJSON(endpoint, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        const payload = await response.json();
-
-        if (!response.ok) {
-          throw new Error(payload.error || 'Failed to load pins');
-        }
+        }, 'Failed to load pins');
 
         if (!cancelled) {
           setPins(Array.isArray(payload.pins) ? payload.pins : []);
@@ -133,14 +136,9 @@ export default function App() {
       }
 
       try {
-        const response = await fetch('/api/me/library', {
+        const payload = await requestJSON('/api/me/library', {
           headers: { Authorization: `Bearer ${token}` }
-        });
-        const payload = await response.json();
-
-        if (!response.ok) {
-          throw new Error(payload.error || 'Failed to load your library');
-        }
+        }, 'Failed to load your library');
 
         if (!cancelled) {
           setSavedPinIds(Array.isArray(payload.savedPinIds) ? payload.savedPinIds : []);
@@ -197,7 +195,7 @@ export default function App() {
   }
 
   async function requestJSON(url, options = {}, defaultError = 'Request failed') {
-    const response = await fetch(url, options);
+    const response = await fetch(apiUrl(url), options);
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(payload.error || defaultError);
@@ -234,16 +232,11 @@ export default function App() {
         };
 
     try {
-      const response = await fetch(endpoint, {
+      const payload = await requestJSON(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || 'Authentication failed');
-      }
+      }, 'Authentication failed');
 
       const nextSession = {
         token: payload.token,
@@ -575,19 +568,14 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`/api/pins/${pinId}/save`, {
+      const payload = await requestJSON(`/api/pins/${pinId}/save`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ boardId })
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || 'Could not save pin');
-      }
+      }, 'Could not save pin');
 
       const saved = Boolean(payload.saved);
       setSavedPinIds(prev => {
@@ -647,15 +635,10 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`/api/pins/${pinId}/like`, {
+      const payload = await requestJSON(`/api/pins/${pinId}/like`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || 'Could not like pin');
-      }
+      }, 'Could not like pin');
 
       const liked = Boolean(payload.liked);
       setLikedPinIds(prev => {
