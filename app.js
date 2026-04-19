@@ -84,6 +84,26 @@ function writeJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
+function normalizeCollection(raw, { arrayKeys = [] } = {}) {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== 'object') return [];
+
+  for (const key of arrayKeys) {
+    if (Array.isArray(raw[key])) return raw[key];
+  }
+
+  const values = Object.values(raw);
+  if (values.length > 0 && values.every(item => item && typeof item === 'object' && !Array.isArray(item))) {
+    return values;
+  }
+
+  if ('id' in raw || 'pinId' in raw || 'email' in raw || 'followerEmail' in raw || 'title' in raw) {
+    return [raw];
+  }
+
+  return [];
+}
+
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
 }
@@ -201,7 +221,7 @@ function requireAdmin(req, res, next) {
 const requireModerator = requireRole('moderator');
 
 function readUsers() {
-  return readJSON(USERS_FILE, []);
+  return normalizeCollection(readJSON(USERS_FILE, []), { arrayKeys: ['users', 'data'] });
 }
 
 function writeUsers(users) {
@@ -214,8 +234,8 @@ function readPins() {
     writeJSON(PINS_FILE, defaultPins);
     return defaultPins;
   }
-  const rawPins = readJSON(PINS_FILE, []);
-  const pinsWithDefaults = Array.isArray(rawPins) ? rawPins.map(ensurePinDefaults) : [];
+  const rawPins = normalizeCollection(readJSON(PINS_FILE, []), { arrayKeys: ['pins', 'data'] });
+  const pinsWithDefaults = rawPins.map(ensurePinDefaults);
   const scheduled = applyScheduledPublishing(pinsWithDefaults);
   const pins = scheduled.pins;
   if (!Array.isArray(pins) || pins.length === 0) {
@@ -233,7 +253,7 @@ function writePins(pins) {
 }
 
 function readLikes() {
-  return readJSON(LIKES_FILE, []);
+  return normalizeCollection(readJSON(LIKES_FILE, []), { arrayKeys: ['likes', 'data'] });
 }
 
 function writeLikes(likes) {
@@ -241,7 +261,7 @@ function writeLikes(likes) {
 }
 
 function readSaves() {
-  return readJSON(SAVES_FILE, []);
+  return normalizeCollection(readJSON(SAVES_FILE, []), { arrayKeys: ['saves', 'data'] });
 }
 
 function writeSaves(saves) {
@@ -249,7 +269,7 @@ function writeSaves(saves) {
 }
 
 function readBoards() {
-  return readJSON(BOARDS_FILE, []);
+  return normalizeCollection(readJSON(BOARDS_FILE, []), { arrayKeys: ['boards', 'data'] });
 }
 
 function writeBoards(boards) {
@@ -257,11 +277,7 @@ function writeBoards(boards) {
 }
 
 function readComments() {
-  const raw = readJSON(COMMENTS_FILE, []);
-  if (Array.isArray(raw)) return raw;
-  if (raw && Array.isArray(raw.comments)) return raw.comments;
-  if (raw && typeof raw === 'object' && (raw.id || raw.pinId)) return [raw];
-  return [];
+  return normalizeCollection(readJSON(COMMENTS_FILE, []), { arrayKeys: ['comments', 'data'] });
 }
 
 function writeComments(comments) {
@@ -269,7 +285,7 @@ function writeComments(comments) {
 }
 
 function readFollows() {
-  return readJSON(FOLLOWS_FILE, []);
+  return normalizeCollection(readJSON(FOLLOWS_FILE, []), { arrayKeys: ['follows', 'data'] });
 }
 
 function writeFollows(follows) {
