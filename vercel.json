@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "buildCommand": "npm run ui:build",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://mypins.onrender.com/api/$1"
+    },
+    {
+      "source": "/IMG/(.*)",
+      "destination": "https://mypins.onrender.com/IMG/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "https://mypins.onrender.com/uploads/$1"
+    },
+    {
+      "source": "/health",
+      "destination": "https://mypins.onrender.com/health"
+    },
+    {
+      "source": "/ready",
+      "destination": "https://mypins.onrender.com/ready"
+    },
+    {
+      "source": "/metrics",
+      "destination": "https://mypins.onrender.com/metrics"
+    }
+  ]
+}

@@ -41,25 +41,36 @@ After building, `npm start` serves:
 
 If `client/dist` is not present, backend falls back to legacy `index.html`.
 
-## Deploy Frontend On Netlify (React)
+## Deploy Frontend On Vercel (React)
 
-This repo now includes `netlify.toml` so Netlify publishes the React app from `client/dist`.
+This repo now includes `vercel.json` so Vercel builds `client/dist` and proxies API/media requests to the backend.
 
-Required Netlify settings:
+Quick deploy:
 
-1. Build command: `npm run ui:build`
-2. Publish directory: `client/dist`
+1. Install Vercel CLI (one-time):
+
+	npm i -g vercel
+
+2. Deploy from the project root:
+
+	vercel
+
+3. Deploy to production:
+
+	vercel --prod
+
+Vercel build settings are already defined in `vercel.json`:
+
+- Build command: `npm run ui:build`
+- Output directory: `client/dist`
+- Rewrites: `/api/*`, `/IMG/*`, and `/uploads/*` are proxied to `https://mypins.onrender.com`
 
 ## Deploy Backend Separately
 
-Netlify (static hosting) does not run your Express API by default. Deploy the backend (`app.js`) to a Node host such as Render, Railway, Fly.io, or any VPS.
+Vercel static hosting does not run your Express API with persistent local JSON storage. Keep the backend (`app.js`) deployed to a Node host such as Render, Railway, Fly.io, or any VPS.
 
-Set this environment variable in Netlify:
+Optional environment variable on Vercel:
 
 `VITE_API_BASE_URL=https://your-backend-domain.com`
 
-After setting it, trigger a new Netlify deploy so React calls:
-
-- `https://your-backend-domain.com/api/...`
-
-instead of trying to call `/api/...` on the Netlify domain.
+If not set, the app will use same-origin `/api/*` first (handled by Vercel rewrites), then fallback to `https://mypins.onrender.com`.
