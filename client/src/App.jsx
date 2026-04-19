@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const SESSION_KEY = 'mypins.react.user';
-const RAW_API_BASE = String(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '').trim();
+const RAW_API_BASE = String(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://mypins.onrender.com').trim();
 const API_BASE = RAW_API_BASE.replace(/\/$/, '');
 
 const CATEGORY_OPTIONS = [
@@ -12,6 +12,58 @@ const CATEGORY_OPTIONS = [
   { id: 'art', label: 'Art' },
   { id: 'photography', label: 'Photography' },
   { id: 'other', label: 'Other' }
+];
+
+const CATEGORY_FALLBACKS = {
+  travel: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80',
+  food: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=80',
+  design: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=900&q=80',
+  art: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=900&q=80',
+  photography: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80',
+  other: 'https://images.unsplash.com/photo-1473177104440-ffee2f376098?auto=format&fit=crop&w=900&q=80'
+};
+
+const FALLBACK_PINS = [
+  {
+    id: 900001,
+    title: 'Coastal retreat moodboard',
+    category: 'travel',
+    imageUrl: CATEGORY_FALLBACKS.travel,
+    likes: 42,
+    saves: 13,
+    createdBy: 'demo@mypins.app',
+    status: 'published'
+  },
+  {
+    id: 900002,
+    title: 'Studio desk setup references',
+    category: 'design',
+    imageUrl: CATEGORY_FALLBACKS.design,
+    likes: 30,
+    saves: 9,
+    createdBy: 'demo@mypins.app',
+    status: 'published'
+  },
+  {
+    id: 900003,
+    title: 'Gallery light study',
+    category: 'art',
+    imageUrl: CATEGORY_FALLBACKS.art,
+    likes: 27,
+    saves: 7,
+    createdBy: 'demo@mypins.app',
+    status: 'published'
+  },
+  {
+    id: 900004,
+    title: 'Weekend comfort food ideas',
+    category: 'food',
+    imageUrl: CATEGORY_FALLBACKS.food,
+    likes: 55,
+    saves: 18,
+    createdBy: 'demo@mypins.app',
+    status: 'published'
+  }
 ];
 
 function readSession() {
@@ -37,6 +89,11 @@ function fallbackImage(title) {
   return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 420'><rect width='320' height='420' fill='%23f3ece5'/><text x='160' y='210' text-anchor='middle' fill='%2363584f' font-size='18'>${safe}</text></svg>`;
 }
 
+function getCategoryFallbackImage(category) {
+  const key = String(category || 'other').toLowerCase();
+  return CATEGORY_FALLBACKS[key] || CATEGORY_FALLBACKS.other;
+}
+
 function apiUrl(path) {
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -50,12 +107,31 @@ function resolveMediaUrl(value) {
   return apiUrl(url);
 }
 
+function resolvePinImage(pin) {
+  return resolveMediaUrl(pin?.imageUrl) || getCategoryFallbackImage(pin?.category) || fallbackImage(pin?.title || 'Pin');
+}
+
+function applyImageFallback(event, pin) {
+  const img = event.currentTarget;
+  const categoryFallback = getCategoryFallbackImage(pin?.category);
+
+  if (!img.dataset.categoryFallbackTried && categoryFallback && img.src !== categoryFallback) {
+    img.dataset.categoryFallbackTried = '1';
+    img.src = categoryFallback;
+    return;
+  }
+
+  img.src = fallbackImage(pin?.title || 'Pin');
+}
+
 export default function App() {
   const [activePage, setActivePage] = useState('home');
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [pins, setPins] = useState([]);
   const [loadingPins, setLoadingPins] = useState(false);
+  const [pinsError, setPinsError] = useState('');
+  const [pinsRetryKey, setPinsRetryKey] = useState(0);
   const [session, setSession] = useState(() => readSession());
   const [savedPinIds, setSavedPinIds] = useState([]);
   const [likedPinIds, setLikedPinIds] = useState([]);
@@ -98,6 +174,7 @@ export default function App() {
 
     async function fetchPins() {
       setLoadingPins(true);
+      setPinsError('');
       try {
         const params = new URLSearchParams();
         if (searchQuery.trim()) params.set('q', searchQuery.trim());
@@ -113,7 +190,8 @@ export default function App() {
         }
       } catch (error) {
         if (!cancelled) {
-          setPins([]);
+          setPins(FALLBACK_PINS);
+          setPinsError(error.message || 'Could not reach the live feed. Showing backup pins.');
           showToast(error.message || 'Could not load pins', 'error');
         }
       } finally {
@@ -128,7 +206,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, searchQuery, token]);
+  }, [activeCategory, searchQuery, token, pinsRetryKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -202,12 +280,32 @@ export default function App() {
   }
 
   async function requestJSON(url, options = {}, defaultError = 'Request failed') {
-    const response = await fetch(apiUrl(url), options);
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload.error || defaultError);
+    const method = String(options.method || 'GET').toUpperCase();
+    const maxAttempts = method === 'GET' ? 2 : 1;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      try {
+        const response = await fetch(apiUrl(url), { ...options, signal: controller.signal });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || defaultError);
+        }
+        return payload;
+      } catch (error) {
+        const isLastAttempt = attempt === maxAttempts - 1;
+        if (isLastAttempt) {
+          throw new Error(error?.message || defaultError);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
     }
-    return payload;
+
+    throw new Error(defaultError);
   }
 
   function updateAuthField(event) {
@@ -697,12 +795,12 @@ export default function App() {
       <article className="pin" key={pin.id} onClick={() => openPinDetail(pin.id)}>
         <div className="pin-img-wrapper">
           <img
-            src={resolveMediaUrl(pin.imageUrl)}
+            src={resolvePinImage(pin)}
             alt={pin.title}
             className="pin-image"
             loading="lazy"
             onError={event => {
-              event.currentTarget.src = fallbackImage(pin.title);
+              applyImageFallback(event, pin);
             }}
           />
           <div className="pin-overlay">
@@ -723,6 +821,9 @@ export default function App() {
 
         <div className="pin-info">
           <div className="pin-title">{pin.title}</div>
+          {pin.status && pin.status !== 'published' && (
+            <div className={`pin-status pin-status-${pin.status}`}>{pin.status}</div>
+          )}
           <div className="pin-card-meta">
             <span className="chip">{pin.category || 'other'}</span>
             <div className="pin-card-actions">
@@ -856,7 +957,15 @@ export default function App() {
             <section className="profile-section">
               <div className="profile-avatar">
                 {profileUser?.avatar
-                  ? <img src={resolveMediaUrl(profileUser.avatar)} alt={profileUser.displayName || profileUser.email || 'Profile'} />
+                  ? (
+                    <img
+                      src={resolveMediaUrl(profileUser.avatar)}
+                      alt={profileUser.displayName || profileUser.email || 'Profile'}
+                      onError={event => {
+                        event.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  )
                   : (profileUser?.displayName || profileUser?.email || currentUser?.displayName || 'U')[0].toUpperCase()}
               </div>
               <div className="profile-name">
@@ -1020,13 +1129,31 @@ export default function App() {
                   <article className="board-card" key={board.id}>
                     <div className="board-cover">
                       <div className="board-cover-main">
-                        {board.pins?.[0]?.imageUrl && <img src={resolveMediaUrl(board.pins[0].imageUrl)} alt={board.name} />}
+                        {board.pins?.[0]?.imageUrl && (
+                          <img
+                            src={resolvePinImage(board.pins[0])}
+                            alt={board.name}
+                            onError={event => applyImageFallback(event, board.pins[0])}
+                          />
+                        )}
                       </div>
                       <div className="board-cover-small">
-                        {board.pins?.[1]?.imageUrl && <img src={resolveMediaUrl(board.pins[1].imageUrl)} alt={board.name} />}
+                        {board.pins?.[1]?.imageUrl && (
+                          <img
+                            src={resolvePinImage(board.pins[1])}
+                            alt={board.name}
+                            onError={event => applyImageFallback(event, board.pins[1])}
+                          />
+                        )}
                       </div>
                       <div className="board-cover-small">
-                        {board.pins?.[2]?.imageUrl && <img src={resolveMediaUrl(board.pins[2].imageUrl)} alt={board.name} />}
+                        {board.pins?.[2]?.imageUrl && (
+                          <img
+                            src={resolvePinImage(board.pins[2])}
+                            alt={board.name}
+                            onError={event => applyImageFallback(event, board.pins[2])}
+                          />
+                        )}
                       </div>
                     </div>
                     <div className="board-info">
@@ -1050,6 +1177,13 @@ export default function App() {
 
         {!isProfilePage && (
         <div className="page-content" style={{ display: 'block' }}>
+          {pinsError && (
+            <div className="network-banner">
+              <span>Feed issue: {pinsError}</span>
+              <button type="button" onClick={() => setPinsRetryKey(prev => prev + 1)}>Retry</button>
+            </div>
+          )}
+
           <div style={{ textAlign: 'center', marginBottom: '12px', color: 'var(--gray-600)' }}>
             {currentUser ? `Welcome back, ${greetingName}` : 'Browse and discover ideas'}
           </div>
@@ -1084,10 +1218,10 @@ export default function App() {
               {detailLoading && <div className="section-title">Loading...</div>}
               {!detailLoading && detailPin && (
                 <img
-                  src={resolveMediaUrl(detailPin.imageUrl)}
+                  src={resolvePinImage(detailPin)}
                   alt={detailPin.title}
                   onError={event => {
-                    event.currentTarget.src = fallbackImage(detailPin.title);
+                    applyImageFallback(event, detailPin);
                   }}
                 />
               )}

@@ -59,6 +59,33 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  position: relative;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(28px);
+}
+
+body::before {
+  width: 320px;
+  height: 320px;
+  right: -80px;
+  top: 120px;
+  background: radial-gradient(circle, rgba(47, 93, 98, 0.24), rgba(47, 93, 98, 0));
+}
+
+body::after {
+  width: 360px;
+  height: 360px;
+  left: -110px;
+  bottom: 90px;
+  background: radial-gradient(circle, rgba(191, 106, 79, 0.22), rgba(191, 106, 79, 0));
 }
 
 h1, h2, h3, .logo-text, .hero-title, .hero-word, .profile-name, .pin-detail-title {
@@ -329,6 +356,7 @@ main {
   column-gap: 12px;
   padding: 0 12px;
   max-width: 100%;
+  position: relative;
 }
 
 /* ===== PIN CARD ===== */
@@ -341,10 +369,13 @@ main {
   position: relative;
   cursor: zoom-in;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition-normal);
+  border: 1px solid rgba(99, 88, 79, 0.08);
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal), border-color var(--transition-fast);
 }
 .pin:hover {
   box-shadow: var(--shadow-lg);
+  border-color: rgba(47, 93, 98, 0.2);
+  transform: translateY(-2px);
 }
 
 /* Pin image wrapper */
@@ -358,6 +389,9 @@ main {
   width: 100%;
   display: block;
   border-radius: var(--radius-md);
+  min-height: 180px;
+  object-fit: cover;
+  background: linear-gradient(155deg, #f5eee7, #efe4d8);
   transition: transform var(--transition-slow);
 }
 .pin-img-wrapper:hover .pin-image {
@@ -449,17 +483,70 @@ main {
 
 /* Pin info below image */
 .pin-info {
-  padding: 8px 6px 10px;
+  padding: 10px 8px 12px;
 }
 .pin-title {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.3;
   color: var(--dark);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.pin-status {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.pin-status-draft {
+  color: #6f4e1f;
+  background: #f8edd5;
+}
+
+.pin-status-scheduled {
+  color: #2f5d62;
+  background: #deedee;
+}
+
+.network-banner {
+  margin: 0 auto 12px;
+  max-width: 1080px;
+  background: linear-gradient(90deg, rgba(191, 63, 63, 0.1), rgba(191, 106, 79, 0.08));
+  border: 1px solid rgba(191, 63, 63, 0.25);
+  color: #7f2a2a;
+  padding: 10px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.network-banner button {
+  border: none;
+  border-radius: 999px;
+  background: #7f2a2a;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.network-banner button:hover {
+  background: #612020;
 }
 .pin-meta {
   display: flex;

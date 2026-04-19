@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MyPins">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bf6a4f" />
+      <stop offset="100%" stop-color="#2f5d62" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g)" />
+  <path d="M34 14c-7.2 0-13 5.8-13 13 0 5 2.8 9.3 7 11.5L24 52h6l2.8-10.8c.4 0 .8.1 1.2.1 7.2 0 13-5.8 13-13s-5.8-13.3-13-13.3zm0 20.3c-4 0-7.3-3.2-7.3-7.3s3.2-7.3 7.3-7.3 7.3 3.2 7.3 7.3-3.2 7.3-7.3 7.3z" fill="#fff" />
+</svg>
