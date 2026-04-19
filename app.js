@@ -32,6 +32,9 @@ const BOARDS_FILE = path.join(__dirname, 'boards.json');
 const SAVES_FILE = path.join(__dirname, 'saves.json');
 const FOLLOWS_FILE = path.join(__dirname, 'follows.json');
 const FEATURE_FLAGS_FILE = path.join(__dirname, 'feature-flags.json');
+const ROOT_STATIC_DIR = path.join(__dirname, '.');
+const CLIENT_DIST_DIR = path.join(__dirname, 'client', 'dist');
+const CLIENT_DIST_INDEX = path.join(CLIENT_DIST_DIR, 'index.html');
 
 const rateBuckets = new Map();
 
@@ -40,7 +43,10 @@ if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 app.use('/IMG', express.static(IMG_DIR, { maxAge: '7d', immutable: true }));
 app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '1d' }));
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.static(ROOT_STATIC_DIR, { index: false }));
+if (fs.existsSync(CLIENT_DIST_DIR)) {
+  app.use(express.static(CLIENT_DIST_DIR, { index: false }));
+}
 
 function readJSON(filePath, fallback = []) {
   try {
@@ -393,7 +399,10 @@ function searchPins(query, category) {
 }
 
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  if (fs.existsSync(CLIENT_DIST_INDEX)) {
+    return res.sendFile(CLIENT_DIST_INDEX);
+  }
+  return res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/health', (_req, res) => {
@@ -1173,6 +1182,14 @@ app.patch('/api/feature-flags', requireAuth, requireAdmin, writeRateLimiter, (re
 
   writeFeatureFlags(nextFlags);
   res.json({ message: 'Feature flags updated', flags: nextFlags });
+});
+
+app.get(/^(?!\/api\/|\/uploads\/|\/IMG\/|\/Style\/|\/Js\/).*/, (_req, res) => {
+  if (fs.existsSync(CLIENT_DIST_INDEX)) {
+    return res.sendFile(CLIENT_DIST_INDEX);
+  }
+
+  return res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.use((err, _req, res, _next) => {

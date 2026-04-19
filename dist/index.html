@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyPins — Discover & Save Ideas</title>
+    <meta name="description" content="Discover and save creative ideas with MyPins — your personal inspiration board.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📌</text></svg>">
+  <link rel="stylesheet" crossorigin href="/assets/index-BwrPvrDE.css">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+    <a class="logo" href="#" id="logoLink">
+        <div class="logo-icon">
+            <i class="fas fa-thumbtack"></i>
+        </div>
+        <div class="logo-text">My<span>Pins</span></div>
+    </a>
+
+    <nav id="mainNav">
+        <a href="#" class="nav-link active" data-page="home">Home</a>
+        <a href="#" class="nav-link" data-page="explore">Explore</a>
+    </nav>
+
+    <div class="search-container">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search" id="searchInput" autocomplete="off">
+    </div>
+
+    <div class="user-actions">
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+            <i class="fas fa-moon"></i>
+        </button>
+        <!-- Logged out state -->
+        <div class="logged-out-actions" id="loggedOutActions">
+            <button class="btn login-btn" id="loginBtn">Log in</button>
+            <button class="btn signup-btn-style" id="signupBtn">Sign up</button>
+        </div>
+
+        <!-- Logged in state -->
+        <div class="logged-in-actions hidden" id="loggedInActions">
+            <button class="icon-btn" id="notifBtn" title="Notifications" aria-label="Notifications">
+                <i class="fas fa-bell"></i>
+                <span class="badge"></span>
+            </button>
+            <button class="icon-btn" id="msgBtn" title="Messages" aria-label="Messages">
+                <i class="fas fa-comment-dots"></i>
+            </button>
+            <button class="user-avatar-btn" id="profileBtn" title="Profile" aria-label="Profile">
+                <span id="avatarInitial">U</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="mainContent">
+
+    <!-- Hero Section (Visible only to logged-out users on Home) -->
+    <section id="heroSection" class="hero-section hidden">
+        <div class="hero-content">
+            <h1 class="hero-title">Get your next</h1>
+            <div class="hero-words-wrapper">
+                <div class="hero-words">
+                    <div class="hero-word text-travel active">vacation idea</div>
+                    <div class="hero-word text-food">dinner recipe</div>
+                    <div class="hero-word text-design">home decor inspiration</div>
+                    <div class="hero-word text-art">creative DIY project</div>
+                </div>
+            </div>
+            <div class="hero-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <p class="hero-subtitle">Sign up to get more ideas that are tailored to you.</p>
+            <button class="hero-cta login-btn btn" onclick="document.getElementById('signupModal').classList.add('active')">Join MyPins</button>
+        </div>
+    </section>
+
+    <!-- Home Page -->
+    <div id="homePage" class="page-content">
+        <div class="pins-container" id="pinsContainer"></div>
+    </div>
+
+    <!-- Explore Page -->
+    <div id="explorePage" class="page-content hidden">
+        <div class="categories" id="categoriesBar">
+            <div class="category active" data-category="all">All Pins</div>
+            <div class="category" data-category="travel">✈️ Travel</div>
+            <div class="category" data-category="food">🍕 Food</div>
+            <div class="category" data-category="design">🎨 Design</div>
+            <div class="category" data-category="art">🖼️ Art</div>
+            <div class="category" data-category="photography">📷 Photography</div>
+            <div class="category" data-category="other">💡 Other</div>
+        </div>
+        <div class="profile-actions" style="padding: 0 16px; margin-bottom: 12px;">
+            <button class="profile-edit-btn" id="saveSearchPresetBtn" type="button">Save current search</button>
+            <div id="savedSearchPresets" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+        </div>
+        <div class="pins-container" id="explorePinsContainer"></div>
+    </div>
+
+    <!-- Profile Page -->
+    <div id="profilePage" class="page-content hidden">
+        <div class="profile-section">
+            <div class="profile-avatar" id="profileAvatar">
+                <span id="profileInitial">U</span>
+            </div>
+            <h1 class="profile-name" id="profileName">User</h1>
+            <p class="profile-email" id="profileEmail">@username</p>
+            <p class="profile-bio" id="profileBio"></p>
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-num" id="profilePinsCount">0</div>
+                    <div class="profile-stat-label">Pins</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-num" id="profileBoardsCount">0</div>
+                    <div class="profile-stat-label">Boards</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-num" id="profileSavesCount">0</div>
+                    <div class="profile-stat-label">Saves</div>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="profile-edit-btn" id="editProfileBtn">Edit profile</button>
+                <button class="profile-edit-btn" id="logoutBtn">Log out</button>
+            </div>
+            <div class="profile-tabs">
+                <div class="profile-tab active" data-tab="created">Created</div>
+                <div class="profile-tab" data-tab="saved">Saved</div>
+                <div class="profile-tab" data-tab="boards">Boards</div>
+            </div>
+        </div>
+
+        <!-- Created pins -->
+        <div id="profileCreatedPins" class="pins-container" style="padding-top: 16px;"></div>
+
+        <!-- Saved pins -->
+        <div id="profileSavedPins" class="pins-container hidden" style="padding-top: 16px;"></div>
+
+        <!-- Boards -->
+        <div id="profileBoardsGrid" class="boards-grid hidden"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="mainFooter" class="main-footer hidden">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#">About MyPins</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Help Center</a>
+            </div>
+            <p class="footer-copyright">&copy; 2026 MyPins. All rights reserved.</p>
+        </div>
+    </footer>
+
+</main>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="close-btn" id="closeLoginModal">&times;</button>
+            <div class="modal-logo"><i class="fas fa-thumbtack"></i></div>
+            <h2>Welcome to MyPins</h2>
+        </div>
+        <div class="modal-body">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required placeholder="Email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Password">
+                </div>
+                <button type="submit" class="submit-btn" id="loginSubmitBtn">Log in</button>
+            </form>
+            <div class="modal-divider">OR</div>
+            <div class="modal-switch">New to MyPins? <a href="#" id="switchToSignup">Sign up</a></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SIGN UP MODAL ===== -->
+<div class="modal" id="signupModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="close-btn" id="closeSignupModal">&times;</button>
+            <div class="modal-logo"><i class="fas fa-thumbtack"></i></div>
+            <h2>Join MyPins</h2>
+            <p>Find new ideas to try</p>
+        </div>
+        <div class="modal-body">
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" required placeholder="Email">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" required placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="signupName">Display name</label>
+                    <input type="text" id="signupName" placeholder="Your name">
+                </div>
+                <button type="submit" class="submit-btn">Sign up</button>
+            </form>
+            <div class="modal-divider">OR</div>
+            <div class="modal-switch">Already a member? <a href="#" id="switchToLogin">Log in</a></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CREATE PIN MODAL ===== -->
+<div class="modal" id="createModal">
+    <div class="modal-content create-modal-content">
+        <div class="modal-header" style="border-bottom: 1px solid var(--gray-100); padding: 16px 24px; text-align: left;">
+            <button class="close-btn" id="closeCreateModal">&times;</button>
+            <h2 style="font-size: 20px;">Create Pin</h2>
+        </div>
+        <form id="createPinForm">
+            <div class="create-modal-inner">
+                <div class="create-modal-left">
+                    <div class="image-upload-container" id="imageUploadContainer">
+                        <i class="fas fa-circle-up"></i>
+                        <p>Click to upload</p>
+                        <span class="upload-hint">We recommend using high quality .jpg files less than 20 MB</span>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                        <img id="imagePreview" class="image-preview" alt="Preview">
+                    </div>
+                </div>
+                <div class="create-modal-right">
+                    <div class="form-group">
+                        <label for="pinTitle">Title</label>
+                        <input type="text" id="pinTitle" required placeholder="Add a title">
+                    </div>
+                    <div class="form-group">
+                        <label for="pinDescription">Description</label>
+                        <textarea id="pinDescription" placeholder="Tell everyone what your pin is about"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="pinCategory">Category</label>
+                        <select id="pinCategory">
+                            <option value="other">Select a category</option>
+                            <option value="travel">Travel</option>
+                            <option value="food">Food</option>
+                            <option value="design">Design</option>
+                            <option value="art">Art</option>
+                            <option value="photography">Photography</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pinTags">Tags</label>
+                        <input type="text" id="pinTags" placeholder="comma,separated,tags">
+                    </div>
+                    <div class="form-group">
+                        <label for="pinStatus">Publishing mode</label>
+                        <select id="pinStatus">
+                            <option value="published">Publish now</option>
+                            <option value="draft">Save as draft</option>
+                            <option value="scheduled">Schedule</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="pinPublishAtGroup" style="display: none;">
+                        <label for="pinPublishAt">Publish at</label>
+                        <input type="datetime-local" id="pinPublishAt">
+                    </div>
+                    <button type="submit" class="submit-btn" style="margin-top: auto;">Publish</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== PIN DETAIL MODAL ===== -->
+<div class="modal" id="pinDetailModal">
+    <div class="modal-content pin-detail-modal">
+        <div class="pin-detail-left">
+            <img id="detailImage" src="" alt="Pin">
+        </div>
+        <div class="pin-detail-right">
+            <div class="pin-detail-actions">
+                <div class="pin-detail-actions-left">
+                    <button class="detail-action-btn" id="detailLikeBtn" title="Like" aria-label="Like pin">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="detail-action-btn" id="detailShareBtn" title="Share" aria-label="Share pin">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    <button class="detail-action-btn" id="detailMoreBtn" title="More options" aria-label="More options">
+                        <i class="fas fa-ellipsis"></i>
+                    </button>
+                </div>
+                <div class="pin-detail-actions-right">
+                    <button class="detail-save-btn" id="detailSaveBtn">Save</button>
+                </div>
+            </div>
+            <div class="detail-board-picker" id="detailBoardPicker">
+                <label for="boardSelect">Save to board</label>
+                <select id="boardSelect"></select>
+            </div>
+            <div class="pin-detail-info" id="detailInfo">
+                <h1 class="pin-detail-title" id="detailTitle"></h1>
+                <p class="pin-detail-desc" id="detailDesc"></p>
+                <div class="pin-detail-creator">
+                    <div class="pin-detail-creator-avatar" id="detailCreatorAvatar">U</div>
+                    <div>
+                        <div class="pin-detail-creator-name" id="detailCreatorName">User</div>
+                        <div class="pin-detail-creator-sub" id="detailCreatorSub"></div>
+                    </div>
+                    <button class="detail-action-btn" id="detailFollowBtn" title="Follow creator" aria-label="Follow creator" style="margin-left: auto;">
+                        <i class="fas fa-user-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="comments-section" id="commentsSection">
+                <h3 class="comments-title">Comments</h3>
+                <div id="commentsList"></div>
+            </div>
+            <div class="comment-input-wrapper" id="commentInputWrapper" style="display: none;">
+                <input type="text" id="commentInput" placeholder="Add a comment">
+                <button class="comment-submit-btn" id="commentSubmitBtn" aria-label="Submit comment">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CREATE BOARD MODAL ===== -->
+<div class="modal" id="createBoardModal">
+    <div class="modal-content" style="max-width: 360px;">
+        <div class="modal-header">
+            <button class="close-btn" id="closeCreateBoardModal">&times;</button>
+            <h2 style="font-size: 20px;">Create board</h2>
+        </div>
+        <div class="modal-body">
+            <form id="createBoardForm">
+                <div class="form-group">
+                    <label for="boardName">Name</label>
+                    <input type="text" id="boardName" required placeholder='Like "Places to Go" or "Recipes to Make"'>
+                </div>
+                <div class="form-group">
+                    <label for="boardDescription">Description</label>
+                    <textarea id="boardDescription" placeholder="Optional board description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="boardVisibility">Visibility</label>
+                    <select id="boardVisibility">
+                        <option value="private">Private</option>
+                        <option value="unlisted">Unlisted</option>
+                        <option value="public">Public</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Create</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== EDIT PROFILE MODAL ===== -->
+<div class="modal" id="editProfileModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="close-btn" id="closeEditProfileModal" aria-label="Close edit profile">&times;</button>
+            <div class="modal-logo"><i class="fas fa-user-pen"></i></div>
+            <h2>Edit profile</h2>
+            <p>Keep your identity and bio current</p>
+        </div>
+        <div class="modal-body">
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="editDisplayName">Display name</label>
+                    <input type="text" id="editDisplayName" placeholder="Your display name">
+                </div>
+                <div class="form-group">
+                    <label for="editBio">Bio</label>
+                    <textarea id="editBio" placeholder="A short bio about you"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editAvatar">Avatar URL</label>
+                    <input type="url" id="editAvatar" placeholder="https://example.com/avatar.jpg">
+                </div>
+                <button type="submit" class="submit-btn">Save changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== NOTIFICATIONS MODAL ===== -->
+<div class="modal" id="notificationsModal">
+    <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-header">
+            <button class="close-btn" id="closeNotificationsModal" aria-label="Close notifications">&times;</button>
+            <div class="modal-logo"><i class="fas fa-bell"></i></div>
+            <h2>Notifications</h2>
+            <p>Your recent activity and alerts</p>
+        </div>
+        <div class="modal-body">
+            <div id="notificationsList" class="comments-section"></div>
+            <button type="button" class="profile-edit-btn" id="clearNotificationsBtn">Clear all notifications</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="./Js/app.js"></script>
+</body>
+</html>
