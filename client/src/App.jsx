@@ -9,7 +9,19 @@ function normalizeApiBase(value) {
 }
 
 function uniqueApiBases(list) {
-  return Array.from(new Set(list.map(normalizeApiBase).filter(Boolean)));
+  const seen = new Set();
+  const unique = [];
+
+  for (const value of list) {
+    const normalized = normalizeApiBase(value);
+    const key = normalized || '__same_origin__';
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    unique.push(normalized);
+  }
+
+  return unique;
 }
 
 function getApiBaseCandidates() {
